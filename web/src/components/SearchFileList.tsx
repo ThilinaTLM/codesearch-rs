@@ -1,10 +1,10 @@
 import React from 'react';
 import {Card, CardContent, CardDescription, CardTitle} from '@/components/ui/card';
-import {SearchResult} from "@/models";
+import {ResultItem} from "@/models";
 
 export type FileListProps = {
-  files: SearchResult[];
-  onSelect: (file: SearchResult) => void;
+  files: ResultItem[];
+  onSelect: (file: ResultItem) => void;
 }
 
 export const SearchFileList: React.FC<FileListProps> = ({files, onSelect}) => {
@@ -18,13 +18,13 @@ export const SearchFileList: React.FC<FileListProps> = ({files, onSelect}) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="overflow-auto space-y-2">
       {files.map((file) => (
-        <Card key={file.path} className="cursor-pointer" onClick={() => onSelect(file)}>
+        <Card key={file.file_path} className="cursor-pointer" onClick={() => onSelect(file)}>
           <CardContent className="p-3">
-            <CardTitle className="text-lg font-semibold">{file.name}</CardTitle>
-            <CardDescription>Score: {file.score}</CardDescription>
-            <CardDescription>Path: {file.path}</CardDescription>
+            <CardTitle className="text-sm truncate">{file.file_name}</CardTitle>
+            <CardDescription className="text-xs truncate">Score: {file._score}</CardDescription>
+            <CardDescription className="text-xs truncate">Path: {file.file_path}</CardDescription>
           </CardContent>
         </Card>
       ))}
