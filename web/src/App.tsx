@@ -1,9 +1,18 @@
-import { Button } from './components/ui/button'
+import {SearchPage} from "@/pages";
+import {useEffect} from "react";
+import api from "@/api";
 
 function App() {
+
+  useEffect(() => {
+    api.health().then((res) => {
+      console.log(`Server health: ${res.status}`);
+    })
+  })
+
   return (
     <>
-      <Button>Click me</Button>
+      <SearchPage />
     </>
   )
 }
