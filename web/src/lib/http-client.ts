@@ -13,7 +13,7 @@ export class HttpClient {
 
   async request<T>(request: HttpClientRequest): Promise<T> {
 
-    // build the url with query params
+    // dist the url with query params
     const url = new URL(this.url);
     url.pathname = request.path;
     if (request.params) {
@@ -22,10 +22,19 @@ export class HttpClient {
       });
     }
 
+    // set content type
+    if (request.method === "POST" || request.method === "PUT") {
+      request.headers = {
+        "Content-Type": "application/json",
+        ...request.headers,
+      };
+    }
+
     // make the request
     const response = await fetch(url.toString(), {
       method: request.method,
       headers: request.headers,
+      body: request.data ? JSON.stringify(request.data) : undefined,
     });
     return response.json();
 

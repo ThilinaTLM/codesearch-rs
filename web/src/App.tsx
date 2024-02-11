@@ -6,7 +6,7 @@ function App() {
 
   useEffect(() => {
     api.health().then((res) => {
-      console.log(`Server health: ${res.status}`);
+      console.log(`Server health: ${res.data.status}`);
     })
   })
 
