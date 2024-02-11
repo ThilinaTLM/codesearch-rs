@@ -162,7 +162,7 @@ impl SearchEngine for FileSearchEngine {
             let code_file_dto = self.schema.create_code_file_dto(&retrieved_doc).unwrap();
             results.push(ResultItem {
                 data: code_file_dto,
-                score,
+                _score: score,
             });
         }
 

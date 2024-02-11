@@ -16,9 +16,10 @@ pub struct SearchOptions {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ResultItem {
+pub struct ResultItem  {
+    pub _score: f32,
+    #[serde(flatten)]
     pub data: CodeFileDto,
-    pub score: f32,
 }
 
 #[async_trait]
