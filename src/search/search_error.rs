@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::Error;
 
+use tantivy::query::QueryParserError;
 use tokio::task;
 
 #[derive(Debug)]
@@ -11,6 +12,14 @@ pub struct SearchError {
 impl fmt::Display for SearchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SearchError: {}", self.error)
+    }
+}
+
+impl From<QueryParserError> for SearchError {
+    fn from(err: QueryParserError) -> Self {
+        SearchError {
+            error: format!("{}", err),
+        }
     }
 }
 

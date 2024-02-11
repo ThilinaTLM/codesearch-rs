@@ -40,6 +40,8 @@ pub struct Repo {
     #[serde(rename = "type")]
     pub(crate) type_: String,
     pub(crate) path: String,
+    pub(crate) skip_patterns: Vec<String>,
+    pub(crate) allowed_file_extensions: Vec<String>,
 }
 
 impl Validatable for Repo {
@@ -67,8 +69,8 @@ impl Validatable for Repo {
 #[derive(Debug, Deserialize, Clone)]
 pub struct Indexer {
     pub(crate) use_temporary_index: bool,
-    index_path: Option<String>,
-    pub(crate) skip_patterns: Vec<String>,
+    pub(crate) index_path: Option<String>,
+    pub(crate) force_reindex: bool,
 }
 
 impl Validatable for Indexer {

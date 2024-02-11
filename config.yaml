@@ -2,18 +2,22 @@ repos:
   - name: "2_7_644"
     type: "fs"
     path: "/home/tlm/Projects/Enactor/2_7_644/"
+    allowed_file_extensions:
+      - "java"
+    skip_patterns:
+      - ".git"
+      - "node_modules"
+      - "dist"
+      - "build"
+      - "coverage"
+      - "test"
+      - "tests"
+      - ".svn"
+      - ".idea"
+      - ".vscode"
+      - ".DS_Store"
+      - "target"
 indexer:
-  use_temporary_index: true
-  skip-patterns:
-    - ".git"
-    - "node_modules"
-    - "dist"
-    - "build"
-    - "coverage"
-    - "test"
-    - "tests"
-    - ".svn"
-    - ".idea"
-    - ".vscode"
-    - ".DS_Store"
-    - "target"
+  use_temporary_index: false
+  index_path: "/home/tlm/Projects/Enactor/search/tmp"
+  force_reindex: false

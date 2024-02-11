@@ -16,3 +16,5 @@ tempfile = "3.9.0"
 walkdir = "2.4.0"
 warp = { version = "0.3.6"}
 mime_guess = { version = "2.0.4", features = [] }
+log = "0.4.20"
+env_logger = "0.11.1"

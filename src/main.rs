@@ -1,12 +1,14 @@
-mod api;
 mod search;
 mod utils;
 mod config;
+mod api;
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     let config = config::load_config("config.yaml").unwrap();
     let engine = search::FileSearchEngine::new(&config).unwrap();
-    engine.initialize().await.unwrap();
-    api::run_api().await;
+    let _ = engine.initialize().await;
+    api::start_api(engine).await;
 }
