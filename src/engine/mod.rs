@@ -2,12 +2,12 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tantivy::{self, doc};
 
-pub use code_schema::CodeFileDto;
-pub use fs_search_engine::FileSearchEngine;
+pub use simple_schema::SimpleSchemaModel;
+pub use search_engine::FileSearchEngine;
 pub use search_error::SearchError;
 
-mod fs_search_engine;
-mod code_schema;
+mod search_engine;
+mod simple_schema;
 mod search_error;
 
 pub struct SearchOptions {
@@ -19,7 +19,7 @@ pub struct SearchOptions {
 pub struct ResultItem  {
     pub _score: f32,
     #[serde(flatten)]
-    pub data: CodeFileDto,
+    pub data: SimpleSchemaModel,
 }
 
 #[async_trait]

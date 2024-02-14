@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::search::ResultItem;
+use crate::engine::ResultItem;
 
 #[derive(Serialize, Deserialize)]
 pub struct StandardResponse<T> where T: Serialize {

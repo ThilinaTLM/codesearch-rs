@@ -9,17 +9,20 @@ use walkdir::{DirEntry, WalkDir};
 
 use crate::config;
 use crate::config::Config;
-use crate::search::{code_schema, ResultItem, SearchEngine, SearchOptions};
-use crate::search::code_schema::CodeFileSchema;
-use crate::search::search_error::SearchError;
+use crate::engine::{simple_schema, ResultItem, SearchEngine, SearchOptions};
+use crate::engine::simple_schema::SimpleSchema;
+use crate::engine::search_error::SearchError;
 
 pub struct FileSearchEngine {
     config: Config,
-    schema: CodeFileSchema,
+    schema: SimpleSchema,
     index: tantivy::Index,
+    meta_data: sled::Db,
 }
 
 impl FileSearchEngine {
+
+
     pub fn new(config: &Config) -> tantivy::Result<Self> {
         log::info!("Starting FS Search Engine");
         let index_path = if config.indexer.use_temporary_index {
@@ -38,7 +41,7 @@ impl FileSearchEngine {
         };
 
         log::info!("Opening index");
-        let code_file_schema = CodeFileSchema::create().unwrap();
+        let code_file_schema = SimpleSchema::create().unwrap();
         let index = tantivy::Index::open_or_create(index_path, code_file_schema.get_schema().clone())?;
         log::info!("Index opened successfully");
 
@@ -64,7 +67,7 @@ impl FileSearchEngine {
             let config = self.config.clone();
             for repo in &config.repos {
                 log::info!("Start indexing repo: {}", repo.name);
-                self.adding_repo_files_to_index(repo)?;
+                self.index_repo(repo)?;
                 log::info!("Finished indexing repo: {}", repo.name);
             }
         } else {
@@ -74,7 +77,7 @@ impl FileSearchEngine {
         Ok(())
     }
 
-    fn adding_repo_files_to_index(&self, repo: &config::Repo) -> Result<(), SearchError> {
+    fn index_repo(&self, repo: &config::Repo) -> Result<(), SearchError> {
         let index = &self.index;
         let index_writer_arc = Arc::new(RwLock::new(index.writer(50_000_000)?));
 
@@ -107,10 +110,9 @@ impl FileSearchEngine {
                 };
                 let file_size = entry.metadata().unwrap().len();
                 let file_last_updated = entry.metadata().unwrap().modified().unwrap();
-                let file_language = mime_guess::from_path(&entry.path()).first_or_octet_stream().to_string();
                 let file_content = fs::read_to_string(entry.path()).unwrap();
 
-                let data = crate::search::code_schema::CodeFileDto {
+                let data = simple_schema::SimpleSchemaModel {
                     repo_name,
                     repo_path,
                     repo_type,
@@ -118,9 +120,8 @@ impl FileSearchEngine {
                     file_path,
                     file_ext,
                     file_size,
-                    file_last_updated: file_last_updated.into(),
-                    file_language,
                     file_content,
+                    last_updated: file_last_updated.into(),
                 };
                 let doc = self.schema.create_document(data);
 
@@ -139,7 +140,7 @@ impl FileSearchEngine {
 #[async_trait]
 impl SearchEngine for FileSearchEngine {
     async fn search(&self, options: SearchOptions) -> Result<Vec<ResultItem>, SearchError> {
-        log::info!("Executing search with query: {}", options.query);
+        log::info!("Executing engine with query: {}", options.query);
         let index = &self.index;
         let index_reader = index.reader()?;
         let searcher = index_reader.searcher();
@@ -147,9 +148,9 @@ impl SearchEngine for FileSearchEngine {
         let query = options.query;
         let limit = options.limit;
         let query_parser = tantivy::query::QueryParser::for_index(&index, vec![
-            self.schema.get_field(code_schema::CodeSchemaFields::FileContent),
-            self.schema.get_field(code_schema::CodeSchemaFields::FileName),
-            self.schema.get_field(code_schema::CodeSchemaFields::FilePath),
+            self.schema.get_field(simple_schema::SimpleSchemaFields::FileContent),
+            self.schema.get_field(simple_schema::SimpleSchemaFields::FileName),
+            self.schema.get_field(simple_schema::SimpleSchemaFields::FilePath),
         ]);
 
         let query = query_parser.parse_query(&query)?;
