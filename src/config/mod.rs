@@ -1,8 +1,14 @@
 use std::fs;
 
 use serde::Deserialize;
-use validator::{Validate, ValidationError};
 use serde_yaml;
+use validator::Validate;
+
+pub use repo::Repo;
+pub use index::Index;
+
+mod repo;
+mod index;
 
 
 pub(crate) fn load_config(file_path: &str) -> Result<Config, serde_yaml::Error> {
@@ -17,29 +23,15 @@ pub(crate) struct Config {
     #[validate]
     pub(crate) repos: Vec<Repo>,
     #[validate]
-    pub(crate) indexer: Indexer,
+    pub(crate) index: Index,
 }
 
-#[derive(Debug, Deserialize, Clone, Validate)]
-pub struct Repo {
-    #[validate(length(min = 1))]
-    pub(crate) name: String,
-
-    #[validate(contains(pattern = "^fs"))]
-    #[serde(rename = "type")]
-    pub(crate) type_: String,
-
-    #[validate(length(min = 1))]
-    pub(crate) path: String,
-
-    pub(crate) skip_patterns: Vec<String>,
-    pub(crate) allowed_file_extensions: Vec<String>,
-}
-
-
-#[derive(Debug, Deserialize, Clone, Validate)]
-pub struct Indexer {
-    pub(crate) use_temporary_index: bool,
-    pub(crate) index_path: Option<String>,
-    pub(crate) force_reindex: bool,
+fn validate_at_least_one_repo(repos: &Vec<Repo>) -> Result<(), validator::ValidationError> {
+    if repos.is_empty() {
+        let mut error = validator::ValidationError::new("at_least_one_repo");
+        error.message = Some("At least one repo must be provided".into());
+        Err(error)
+    } else {
+        Ok(())
+    }
 }

@@ -65,11 +65,11 @@ impl SimpleSchemaFields {
     }
 }
 
-pub(crate) struct SimpleSchema {
+pub(crate) struct SimpleSchemaWrapper {
     schema: tantivy::schema::Schema,
 }
 
-impl SimpleSchema {
+impl SimpleSchemaWrapper {
     pub fn create() -> tantivy::Result<Self> {
         let schema = {
             let mut schema_builder = tantivy::schema::Schema::builder();
@@ -92,7 +92,7 @@ impl SimpleSchema {
             schema_builder.build()
         };
 
-        Ok(SimpleSchema {
+        Ok(SimpleSchemaWrapper {
             schema,
         })
     }

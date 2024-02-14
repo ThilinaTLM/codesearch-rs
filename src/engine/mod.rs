@@ -9,6 +9,7 @@ pub use search_error::SearchError;
 mod search_engine;
 mod simple_schema;
 mod search_error;
+mod metadata;
 
 pub struct SearchOptions {
     pub query: String,

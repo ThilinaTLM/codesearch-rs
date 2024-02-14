@@ -1,80 +1,74 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::{Arc, RwLock};
 
+use anyhow::Result;
 use async_trait::async_trait;
 use log;
 use rayon::prelude::*;
+use tantivy::directory::MmapDirectory;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::config;
 use crate::config::Config;
 use crate::engine::{simple_schema, ResultItem, SearchEngine, SearchOptions};
-use crate::engine::simple_schema::SimpleSchema;
-use crate::engine::search_error::SearchError;
+use crate::engine::metadata::EngineMetadataRepo;
+use crate::engine::simple_schema::SimpleSchemaWrapper;
 
 pub struct FileSearchEngine {
     config: Config,
-    schema: SimpleSchema,
+    schema_wrapper: SimpleSchemaWrapper,
     index: tantivy::Index,
-    meta_data: sled::Db,
+    meta_data_repo: EngineMetadataRepo,
 }
 
 impl FileSearchEngine {
 
 
-    pub fn new(config: &Config) -> tantivy::Result<Self> {
-        log::info!("Starting FS Search Engine");
-        let index_path = if config.indexer.use_temporary_index {
-            let index_path = tantivy::directory::MmapDirectory::create_from_tempdir()?;
-            log::info!("Using temporary index: {:?}", index_path);
-            index_path
-        } else {
-            let index_path = config.indexer.clone().index_path.unwrap().to_string();
-            let index_path = PathBuf::from(index_path);
-            if !index_path.exists() {
-                fs::create_dir(&index_path)?;
-            }
-            let index_path = tantivy::directory::MmapDirectory::open(index_path)?;
-            log::info!("Using index: {:?}", index_path);
-            index_path
-        };
+    pub fn new(config: &Config) -> Result<Self> {
+
+        // load meta data db
+        log::info!("Opening meta data db");
+        let meta_data = EngineMetadataRepo::new(Path::new(&config.index.metadata_dir()))?;
+        log::info!("Meta data db opened successfully");
 
         log::info!("Opening index");
-        let code_file_schema = SimpleSchema::create().unwrap();
-        let index = tantivy::Index::open_or_create(index_path, code_file_schema.get_schema().clone())?;
+        let schema_wrapper = SimpleSchemaWrapper::create().unwrap();
+        let index_path = MmapDirectory::open(Path::new(&config.index.index_dir()))
+            .map_err(anyhow::Error::new)?;
+        let index = tantivy::Index::open_or_create(index_path, schema_wrapper.get_schema().clone())
+            .map_err(anyhow::Error::new)?;
         log::info!("Index opened successfully");
 
+        // starting indexing repos that are not indexed yet
+        for repo in &config.repos {
+            if !meta_data.is_repo_indexed(&repo.name) {
+                log::info!("Indexing repo: {}", repo.name);
+                let engine = FileSearchEngine {
+                    config: config.clone(),
+                    schema_wrapper: schema_wrapper.clone(),
+                    index: index.clone(),
+                    meta_data_repo: meta_data.clone(),
+                };
+                engine.index_repo(repo)?;
+                meta_data.mark_repo_indexed(&repo.name)?;
+            }
+        }
+
         Ok(Self {
-            index,
-            schema: code_file_schema,
             config: config.clone(),
+            schema_wrapper,
+            index,
+            meta_data_repo: meta_data,
         })
     }
 
     fn filter_skip_patterns(&self, entry: &DirEntry, repo: &config::Repo) -> bool {
         let path = entry.path();
         let path_str = path.to_str().unwrap();
-        repo.skip_patterns.iter().any(|pattern| {
+        repo.skip_dir_patterns.iter().any(|pattern| {
             path_str.contains(pattern)
         })
-    }
-
-    pub(crate) async fn initialize(&self) -> Result<(), SearchError> {
-        log::info!("Initializing index for FileSearchEngine");
-
-        if self.config.indexer.force_reindex {
-            let config = self.config.clone();
-            for repo in &config.repos {
-                log::info!("Start indexing repo: {}", repo.name);
-                self.index_repo(repo)?;
-                log::info!("Finished indexing repo: {}", repo.name);
-            }
-        } else {
-            log::info!("Skipping indexing because force_reindex is false");
-        }
-
-        Ok(())
     }
 
     fn index_repo(&self, repo: &config::Repo) -> Result<(), SearchError> {
@@ -88,7 +82,7 @@ impl FileSearchEngine {
             .for_each(|entry| {
                 match entry.path().extension() {
                     Some(ext) => {
-                        if !repo.allowed_file_extensions.contains(&ext.to_str().unwrap().to_string()) {
+                        if !repo.include_file_extensions.contains(&ext.to_str().unwrap().to_string()) {
                             return;
                         }
                     }
@@ -123,7 +117,7 @@ impl FileSearchEngine {
                     file_content,
                     last_updated: file_last_updated.into(),
                 };
-                let doc = self.schema.create_document(data);
+                let doc = self.schema_wrapper.create_document(data);
 
                 let index_writer = index_writer_arc.read().unwrap();
                 index_writer.add_document(doc).unwrap();
@@ -148,9 +142,9 @@ impl SearchEngine for FileSearchEngine {
         let query = options.query;
         let limit = options.limit;
         let query_parser = tantivy::query::QueryParser::for_index(&index, vec![
-            self.schema.get_field(simple_schema::SimpleSchemaFields::FileContent),
-            self.schema.get_field(simple_schema::SimpleSchemaFields::FileName),
-            self.schema.get_field(simple_schema::SimpleSchemaFields::FilePath),
+            self.schema_wrapper.get_field(simple_schema::SimpleSchemaFields::FileContent),
+            self.schema_wrapper.get_field(simple_schema::SimpleSchemaFields::FileName),
+            self.schema_wrapper.get_field(simple_schema::SimpleSchemaFields::FilePath),
         ]);
 
         let query = query_parser.parse_query(&query)?;
@@ -160,7 +154,7 @@ impl SearchEngine for FileSearchEngine {
 
         for (score, doc_address) in top_docs {
             let retrieved_doc = searcher.doc(doc_address.clone()).unwrap();
-            let code_file_dto = self.schema.create_code_file_dto(&retrieved_doc).unwrap();
+            let code_file_dto = self.schema_wrapper.create_code_file_dto(&retrieved_doc).unwrap();
             results.push(ResultItem {
                 data: code_file_dto,
                 _score: score,

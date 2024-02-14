@@ -62,3 +62,11 @@ impl From<task::JoinError> for SearchError {
         }
     }
 }
+
+impl From<sled::Error> for SearchError {
+    fn from(err: sled::Error) -> Self {
+        SearchError {
+            error: format!("{}", err),
+        }
+    }
+}

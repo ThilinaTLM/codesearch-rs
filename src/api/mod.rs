@@ -10,7 +10,11 @@ use crate::engine::{FileSearchEngine, SearchEngine, SearchOptions};
 
 mod models;
 
-static WEB_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/web/dist");
+#[cfg(not(debug_assertions))]
+static WEB_DIR: Option<Dir> = include_dir!("$CARGO_MANIFEST_DIR/web/dist");
+
+#[cfg(debug_assertions)]
+static WEB_DIR: Option<Dir> = None;
 
 pub async fn start_api(engine: FileSearchEngine) {
     log::info!("Starting API server...");
@@ -23,13 +27,14 @@ pub async fn start_api(engine: FileSearchEngine) {
         .allow_headers(vec!["content-type"])
         .build();
 
+    #[cfg(not(debug_assertions))]
     let web_static_route = warp::path("ui")
-        .and(warp::path::tail()) // Use `tail()` to capture the entire path after `/ui/`
+        .and(warp::path::tail())
         .and_then(move |tail: warp::path::Tail| {
-            let file_path = format!("{}{}", WEB_DIR.path().display(), tail.as_str());
+            let file_path = format!("{}{}", WEB_DIR.expect("couldn't find ui build").path().display(), tail.as_str());
             log::info!("Serving static file: {}", file_path);
             async move {
-                match WEB_DIR.get_file(&file_path) {
+                match WEB_DIR.expect("couldn't find ui build").get_file(&file_path) {
                     Some(file) => {
                         let mime_type = mime_guess::from_path(&file_path).first_or_octet_stream().to_string();
                         Ok::<_, Infallible>(warp::reply::with_header(
@@ -46,6 +51,19 @@ pub async fn start_api(engine: FileSearchEngine) {
                         ).into_response())
                     }
                 }
+            }
+        });
+
+    #[cfg(debug_assertions)]
+    let web_static_route = warp::path("ui")
+        .and(warp::path::tail())
+        .and_then(move |_: warp::path::Tail| {
+            async move {
+                log::warn!("Embedded UI not available in debug mode");
+                Ok::<_, Infallible>(warp::reply::with_status(
+                    "Embedded UI not available in debug mode",
+                    warp::http::StatusCode::NOT_FOUND,
+                ).into_response())
             }
         });
 

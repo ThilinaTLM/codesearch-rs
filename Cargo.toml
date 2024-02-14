@@ -13,13 +13,13 @@ tokio = { version = "1.36.0", features = ["rt", "rt-multi-thread", "macros"] }
 chrono = { version = "0.4.33", features = ["serde"] }
 tantivy = { version = "0.21.1" }
 rayon = "1.8.1"
-tempfile = "3.9.0"
 walkdir = "2.4.0"
 warp = { version = "0.3.6"}
-mime_guess = { version = "2.0.4", features = [] }
 log = "0.4.20"
 env_logger = "0.11.1"
 include_dir = "0.7.3"
 sled = "0.34.7"
 validator = { version = "0.16.1", features = ["derive"] }
+dirs = "5.0.1"
+anyhow = "1.0.79"
 
