@@ -1,8 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use validator::Validate;
 use crate::utils::validators::validate_path_exists;
 
-#[derive(Debug, Deserialize, Clone, Validate)]
+#[derive(Debug, Serialize, Deserialize, Clone, Validate)]
 pub struct Index {
     #[validate(custom = "validate_path_exists")]
     #[serde(default = "default_data_dir")]
@@ -18,6 +18,7 @@ pub struct Index {
 }
 
 impl Index {
+
     pub(crate) fn index_dir(&self) -> String {
         std::path::Path::new(&self.data_dir)
             .join(&self.index_dir_name)
@@ -32,6 +33,16 @@ impl Index {
             .to_str()
             .unwrap()
             .to_string()
+    }
+}
+
+impl Default for Index {
+    fn default() -> Self {
+        Index {
+            data_dir: default_data_dir(),
+            index_dir_name: default_index_dir_name(),
+            metadata_dir_name: default_metadata_dir_name(),
+        }
     }
 }
 

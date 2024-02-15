@@ -1,8 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 use crate::utils::validators::{validate_string_in_patterns, validate_path_exists};
 
-#[derive(Debug, Deserialize, Clone, Validate)]
+#[derive(Debug, Serialize, Deserialize, Clone, Validate)]
 pub struct Repo {
     #[validate(length(min = 1))]
     pub(crate) name: String,
