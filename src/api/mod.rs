@@ -1,7 +1,9 @@
 use std::convert::Infallible;
 use std::sync::Arc;
 
+#[cfg(not(debug_assertions))]
 use include_dir::{Dir, include_dir};
+
 use warp::{self, Filter, Reply};
 use warp::http::Method;
 
@@ -12,9 +14,6 @@ mod models;
 
 #[cfg(not(debug_assertions))]
 static WEB_DIR: Option<Dir> = include_dir!("$CARGO_MANIFEST_DIR/web/dist");
-
-#[cfg(debug_assertions)]
-static WEB_DIR: Option<Dir> = None;
 
 pub async fn start_api(engine: FileSearchEngine) {
     log::info!("Starting API server...");

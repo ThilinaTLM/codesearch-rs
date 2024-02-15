@@ -41,7 +41,7 @@ impl EngineMetadataRepo {
         Ok(())
     }
 
-    fn set_last_indexed_timestamp(&self, repo_name: &str, timestamp: u64) -> Result<()> {
+    pub(crate) fn set_last_indexed_timestamp(&self, repo_name: &str, timestamp: u64) -> Result<()> {
         self.set(&format!("last_indexed_time_{}", repo_name), &timestamp.to_be_bytes())
     }
 

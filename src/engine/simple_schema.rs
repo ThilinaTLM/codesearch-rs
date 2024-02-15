@@ -3,7 +3,7 @@ use tantivy::doc;
 use tantivy::schema::{Field, STORED, STRING, TEXT, TextOptions};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SimpleSchemaModel {
+pub struct SchemaWrapperModel {
     pub repo_name: String,
     pub repo_path: String,
     pub repo_type: String,
@@ -17,7 +17,7 @@ pub struct SimpleSchemaModel {
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
 
-pub enum SimpleSchemaFields {
+pub enum SchemaWrapperFields {
     RepoName,
     RepoPath,
     RepoType,
@@ -31,36 +31,36 @@ pub enum SimpleSchemaFields {
     LastUpdated,
 }
 
-impl SimpleSchemaFields {
+impl SchemaWrapperFields {
     pub fn get_name(&self) -> &str {
         match self {
-            SimpleSchemaFields::RepoName => "repo_name",
-            SimpleSchemaFields::RepoPath => "repo_path",
-            SimpleSchemaFields::RepoType => "repo_type",
+            SchemaWrapperFields::RepoName => "repo_name",
+            SchemaWrapperFields::RepoPath => "repo_path",
+            SchemaWrapperFields::RepoType => "repo_type",
 
-            SimpleSchemaFields::FileName => "file_name",
-            SimpleSchemaFields::FilePath => "file_path",
-            SimpleSchemaFields::FileExt => "file_ext",
-            SimpleSchemaFields::FileSize => "file_size",
-            SimpleSchemaFields::FileContent => "file_content",
+            SchemaWrapperFields::FileName => "file_name",
+            SchemaWrapperFields::FilePath => "file_path",
+            SchemaWrapperFields::FileExt => "file_ext",
+            SchemaWrapperFields::FileSize => "file_size",
+            SchemaWrapperFields::FileContent => "file_content",
 
-            SimpleSchemaFields::LastUpdated => "last_updated",
+            SchemaWrapperFields::LastUpdated => "last_updated",
         }
     }
 
     pub fn get_type(&self) -> TextOptions {
         match self {
-            SimpleSchemaFields::RepoName => STRING | STORED,
-            SimpleSchemaFields::RepoPath => TEXT | STORED,
-            SimpleSchemaFields::RepoType => STRING | STORED,
+            SchemaWrapperFields::RepoName => STRING | STORED,
+            SchemaWrapperFields::RepoPath => TEXT | STORED,
+            SchemaWrapperFields::RepoType => STRING | STORED,
 
-            SimpleSchemaFields::FileName => TEXT | STORED,
-            SimpleSchemaFields::FilePath => TEXT | STORED,
-            SimpleSchemaFields::FileExt => STRING | STORED,
-            SimpleSchemaFields::FileSize => STORED.into(),
-            SimpleSchemaFields::FileContent => TEXT | STORED,
+            SchemaWrapperFields::FileName => TEXT | STORED,
+            SchemaWrapperFields::FilePath => TEXT | STORED,
+            SchemaWrapperFields::FileExt => STRING | STORED,
+            SchemaWrapperFields::FileSize => STORED.into(),
+            SchemaWrapperFields::FileContent => TEXT | STORED,
 
-            SimpleSchemaFields::LastUpdated => STORED.into(),
+            SchemaWrapperFields::LastUpdated => STORED.into(),
         }
     }
 }
@@ -74,17 +74,17 @@ impl SimpleSchemaWrapper {
         let schema = {
             let mut schema_builder = tantivy::schema::Schema::builder();
             let fields = vec![
-                SimpleSchemaFields::RepoName,
-                SimpleSchemaFields::RepoPath,
-                SimpleSchemaFields::RepoType,
+                SchemaWrapperFields::RepoName,
+                SchemaWrapperFields::RepoPath,
+                SchemaWrapperFields::RepoType,
 
-                SimpleSchemaFields::FileName,
-                SimpleSchemaFields::FilePath,
-                SimpleSchemaFields::FileExt,
-                SimpleSchemaFields::FileSize,
-                SimpleSchemaFields::FileContent,
+                SchemaWrapperFields::FileName,
+                SchemaWrapperFields::FilePath,
+                SchemaWrapperFields::FileExt,
+                SchemaWrapperFields::FileSize,
+                SchemaWrapperFields::FileContent,
 
-                SimpleSchemaFields::LastUpdated,
+                SchemaWrapperFields::LastUpdated,
             ];
             for field in fields {
                 schema_builder.add_text_field(field.get_name(), field.get_type());
@@ -101,22 +101,23 @@ impl SimpleSchemaWrapper {
         &self.schema
     }
 
-    pub fn get_field(&self, field_name: SimpleSchemaFields) -> Field {
+    pub fn get_field(&self, field_name: SchemaWrapperFields) -> Field {
         self.schema.get_field(field_name.get_name()).unwrap()
     }
 
-    pub fn create_document(&self, data: SimpleSchemaModel) -> tantivy::Document {
-        let repo_name_field = self.get_field(SimpleSchemaFields::RepoName);
-        let repo_path_field = self.get_field(SimpleSchemaFields::RepoPath);
-        let repo_type_field = self.get_field(SimpleSchemaFields::RepoType);
+    pub fn create_document(&self, data: SchemaWrapperModel) -> tantivy::Document {
+        let repo_name_field = self.get_field(SchemaWrapperFields::RepoName);
+        let repo_path_field = self.get_field(SchemaWrapperFields::RepoPath);
+        let repo_type_field = self.get_field(SchemaWrapperFields::RepoType);
 
-        let name_field = self.get_field(SimpleSchemaFields::FileName);
-        let path_field = self.get_field(SimpleSchemaFields::FilePath);
-        let ext_field = self.get_field(SimpleSchemaFields::FileExt);
-        let size_field = self.get_field(SimpleSchemaFields::FileSize);
-        let content_field = self.get_field(SimpleSchemaFields::FileContent);
+        let name_field = self.get_field(SchemaWrapperFields::FileName);
+        let path_field = self.get_field(SchemaWrapperFields::FilePath);
+        let ext_field = self.get_field(SchemaWrapperFields::FileExt);
+        let size_field = self.get_field(SchemaWrapperFields::FileSize);
+        let content_field = self.get_field(SchemaWrapperFields::FileContent);
 
-        let updated_field = self.get_field(SimpleSchemaFields::LastUpdated);
+        let updated_field = self.get_field(SchemaWrapperFields::LastUpdated);
+
         return doc!(
             repo_name_field => data.repo_name,
             repo_path_field => data.repo_path,
@@ -130,21 +131,21 @@ impl SimpleSchemaWrapper {
         );
     }
 
-    pub fn create_code_file_dto(&self, doc: &tantivy::Document) -> tantivy::Result<SimpleSchemaModel> {
-        let repo_name = self.extract_text_field(doc, SimpleSchemaFields::RepoName)?;
-        let repo_path = self.extract_text_field(doc, SimpleSchemaFields::RepoPath)?;
-        let repo_type = self.extract_text_field(doc, SimpleSchemaFields::RepoType)?;
-        let file_name = self.extract_text_field(doc, SimpleSchemaFields::FileName)?;
-        let file_path = self.extract_text_field(doc, SimpleSchemaFields::FilePath)?;
-        let file_ext = self.extract_text_field(doc, SimpleSchemaFields::FileExt)?;
-        let file_size = self.extract_text_field(doc, SimpleSchemaFields::FileSize)?.parse().unwrap();
-        let file_content = self.extract_text_field(doc, SimpleSchemaFields::FileContent)?;
+    pub fn create_code_file_dto(&self, doc: &tantivy::Document) -> tantivy::Result<SchemaWrapperModel> {
+        let repo_name = self.extract_text_field(doc, SchemaWrapperFields::RepoName)?;
+        let repo_path = self.extract_text_field(doc, SchemaWrapperFields::RepoPath)?;
+        let repo_type = self.extract_text_field(doc, SchemaWrapperFields::RepoType)?;
+        let file_name = self.extract_text_field(doc, SchemaWrapperFields::FileName)?;
+        let file_path = self.extract_text_field(doc, SchemaWrapperFields::FilePath)?;
+        let file_ext = self.extract_text_field(doc, SchemaWrapperFields::FileExt)?;
+        let file_size = self.extract_text_field(doc, SchemaWrapperFields::FileSize)?.parse().unwrap();
+        let file_content = self.extract_text_field(doc, SchemaWrapperFields::FileContent)?;
 
-        let last_updated = self.extract_date_field(doc, SimpleSchemaFields::LastUpdated)?;
+        let last_updated = self.extract_date_field(doc, SchemaWrapperFields::LastUpdated)?;
         let last_updated = chrono::DateTime::from_timestamp_millis(last_updated.into_timestamp_millis())
             .unwrap_or_else(|| chrono::Utc::now());
 
-        Ok(SimpleSchemaModel {
+        Ok(SchemaWrapperModel {
             repo_name,
             repo_path,
             repo_type,
@@ -157,11 +158,11 @@ impl SimpleSchemaWrapper {
         })
     }
 
-    fn extract_date_field(&self, doc: &tantivy::Document, field_name: SimpleSchemaFields) -> tantivy::Result<tantivy::DateTime> {
+    fn extract_date_field(&self, doc: &tantivy::Document, field_name: SchemaWrapperFields) -> tantivy::Result<tantivy::DateTime> {
         Ok(doc.get_first(self.get_field(field_name)).unwrap().as_date().unwrap().clone())
     }
 
-    fn extract_text_field(&self, doc: &tantivy::Document, field_name: SimpleSchemaFields) -> tantivy::Result<String> {
+    fn extract_text_field(&self, doc: &tantivy::Document, field_name: SchemaWrapperFields) -> tantivy::Result<String> {
         Ok(doc.get_first(self.get_field(field_name)).unwrap().as_text().unwrap().to_string())
     }
 }

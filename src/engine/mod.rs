@@ -1,10 +1,10 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tantivy::{self, doc};
+use anyhow::Result;
 
-pub use simple_schema::SimpleSchemaModel;
+pub use simple_schema::SchemaWrapperModel;
 pub use search_engine::FileSearchEngine;
-pub use search_error::SearchError;
 
 mod search_engine;
 mod simple_schema;
@@ -20,10 +20,10 @@ pub struct SearchOptions {
 pub struct ResultItem  {
     pub _score: f32,
     #[serde(flatten)]
-    pub data: SimpleSchemaModel,
+    pub data: SchemaWrapperModel,
 }
 
 #[async_trait]
 pub trait SearchEngine {
-    async fn search(&self, options: SearchOptions) -> Result<Vec<ResultItem>, SearchError>;
+    async fn search(&self, options: SearchOptions) -> Result<Vec<ResultItem>>;
 }

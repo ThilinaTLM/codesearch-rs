@@ -40,21 +40,6 @@ impl FileSearchEngine {
             .map_err(anyhow::Error::new)?;
         log::info!("Index opened successfully");
 
-        // starting indexing repos that are not indexed yet
-        for repo in &config.repos {
-            if !meta_data.is_repo_indexed(&repo.name) {
-                log::info!("Indexing repo: {}", repo.name);
-                let engine = FileSearchEngine {
-                    config: config.clone(),
-                    schema_wrapper: schema_wrapper.clone(),
-                    index: index.clone(),
-                    meta_data_repo: meta_data.clone(),
-                };
-                engine.index_repo(repo)?;
-                meta_data.mark_repo_indexed(&repo.name)?;
-            }
-        }
-
         Ok(Self {
             config: config.clone(),
             schema_wrapper,
@@ -71,15 +56,20 @@ impl FileSearchEngine {
         })
     }
 
-    fn index_repo(&self, repo: &config::Repo) -> Result<(), SearchError> {
+    fn index_repo(&self, repo: &config::Repo) -> Result<()> {
+
         let index = &self.index;
         let index_writer_arc = Arc::new(RwLock::new(index.writer(50_000_000)?));
+        let last_indexed_timestamp = self.meta_data_repo.get_last_indexed_timestamp(&repo.name)
+            .unwrap_or(Some(0)).unwrap();
 
         let walker = WalkDir::new(&repo.path).into_iter();
         walker.filter_entry(|e| !self.filter_skip_patterns(e, repo))
             .filter_map(|e| e.ok())
             .par_bridge()
             .for_each(|entry| {
+
+                log::trace!("Checking that file extension in the allowed list: {:?}", entry.path().extension());
                 match entry.path().extension() {
                     Some(ext) => {
                         if !repo.include_file_extensions.contains(&ext.to_str().unwrap().to_string()) {
@@ -91,31 +81,24 @@ impl FileSearchEngine {
                     }
                 }
 
+                log::trace!("Checking that file has been modified since last indexing");
+                if let Ok(metadata) = entry.metadata() {
+                    if metadata.modified().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() < last_indexed_timestamp {
+                        return;
+                    }
+                }
+
                 log::trace!("Indexing file: {:?}", entry.path());
-
-                let repo_name = repo.name.clone();
-                let repo_path = repo.path.clone();
-                let repo_type = repo.type_.clone();
-                let file_name = entry.file_name().to_str().unwrap().to_string();
-                let file_path = entry.path().strip_prefix(&repo.path).unwrap().to_str().unwrap().to_string();
-                let file_ext = match entry.path().extension() {
-                    Some(ext) => ext.to_str().unwrap().to_string(),
-                    None => "".to_string(),
-                };
-                let file_size = entry.metadata().unwrap().len();
-                let file_last_updated = entry.metadata().unwrap().modified().unwrap();
-                let file_content = fs::read_to_string(entry.path()).unwrap();
-
-                let data = simple_schema::SimpleSchemaModel {
-                    repo_name,
-                    repo_path,
-                    repo_type,
-                    file_name,
-                    file_path,
-                    file_ext,
-                    file_size,
-                    file_content,
-                    last_updated: file_last_updated.into(),
+                let data = simple_schema::SchemaWrapperModel {
+                    repo_name: repo.name.clone(),
+                    repo_path: repo.path.clone(),
+                    repo_type: repo.type_.clone(),
+                    file_name: entry.file_name().to_str().unwrap().to_string(),
+                    file_path: entry.path().strip_prefix(&repo.path).unwrap().to_str().unwrap().to_string(),
+                    file_ext: entry.path().extension().map_or_else(|| "".to_string(), |ext| ext.to_str().unwrap().to_string()),
+                    file_size: entry.metadata().unwrap().len(),
+                    file_content: fs::read_to_string(entry.path()).unwrap(),
+                    last_updated: entry.metadata().unwrap().modified().unwrap().into(),
                 };
                 let doc = self.schema_wrapper.create_document(data);
 
@@ -125,6 +108,8 @@ impl FileSearchEngine {
 
         let mut index_writer = index_writer_arc.write().unwrap();
         index_writer.commit()?;
+        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        self.meta_data_repo.set_last_indexed_timestamp(&repo.name, timestamp)?;
 
         Ok(())
     }
@@ -133,7 +118,7 @@ impl FileSearchEngine {
 
 #[async_trait]
 impl SearchEngine for FileSearchEngine {
-    async fn search(&self, options: SearchOptions) -> Result<Vec<ResultItem>, SearchError> {
+    async fn search(&self, options: SearchOptions) -> Result<Vec<ResultItem>> {
         log::info!("Executing engine with query: {}", options.query);
         let index = &self.index;
         let index_reader = index.reader()?;
@@ -142,9 +127,9 @@ impl SearchEngine for FileSearchEngine {
         let query = options.query;
         let limit = options.limit;
         let query_parser = tantivy::query::QueryParser::for_index(&index, vec![
-            self.schema_wrapper.get_field(simple_schema::SimpleSchemaFields::FileContent),
-            self.schema_wrapper.get_field(simple_schema::SimpleSchemaFields::FileName),
-            self.schema_wrapper.get_field(simple_schema::SimpleSchemaFields::FilePath),
+            self.schema_wrapper.get_field(simple_schema::SchemaWrapperFields::FileContent),
+            self.schema_wrapper.get_field(simple_schema::SchemaWrapperFields::FileName),
+            self.schema_wrapper.get_field(simple_schema::SchemaWrapperFields::FilePath),
         ]);
 
         let query = query_parser.parse_query(&query)?;

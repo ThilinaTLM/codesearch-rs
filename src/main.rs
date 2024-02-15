@@ -9,6 +9,5 @@ async fn main() {
 
     let config = config::load_config("config.yaml").unwrap();
     let engine = engine::FileSearchEngine::new(&config).unwrap();
-    let _ = engine.initialize().await;
     api::start_api(engine).await;
 }
