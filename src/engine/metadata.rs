@@ -56,7 +56,7 @@ impl EngineMetadataRepo {
         }
     }
 
-    fn get_number_of_indexed_files(&self, repo_name: &str) -> Result<Option<u64>> {
+    pub(crate) fn get_number_of_indexed_files(&self, repo_name: &str) -> Result<Option<u64>> {
         match self.get(&format!("number_of_indexed_files_{}", repo_name))? {
             Some(bytes) => {
                 let mut array = [0; 8];
@@ -67,29 +67,36 @@ impl EngineMetadataRepo {
         }
     }
 
-    fn set_number_of_indexed_files(&self, repo_name: &str, number_of_files: u64) -> Result<()> {
+    pub(crate) fn set_number_of_indexed_files(&self, repo_name: &str, number_of_files: u64) -> Result<()> {
         self.set(&format!("number_of_indexed_files_{}", repo_name), &number_of_files.to_be_bytes())
     }
 
-    fn get_indexing_status(&self, repo_name: &str) -> Result<Option<String>> {
+    pub(crate) fn get_indexing_status(&self, repo_name: &str) -> Result<String> {
         match self.get(&format!("indexing_status_{}", repo_name))? {
             Some(bytes) => {
-                Ok(Some(String::from_utf8(bytes).unwrap()))
+                Ok(String::from_utf8(bytes).unwrap())
             }
-            None => Ok(None),
+            None => Ok("never".to_string()),
         }
     }
 
-    fn set_indexing_status(&self, repo_name: &str, status: &str) -> Result<()> {
+    pub(crate) fn set_indexing_status(&self, repo_name: &str, status: &str) -> Result<()> {
         self.set(&format!("indexing_status_{}", repo_name), status.as_bytes())
     }
 
-    pub(crate) fn is_repo_indexed(&self, repo_name: &str) -> bool {
-        self.get_last_indexed_timestamp(repo_name).unwrap().is_some()
+    pub(crate) fn mark_repo_indexing_started(&self, repo_name: &str) -> Result<()> {
+        self.set_indexing_status(repo_name, "indexing")?;
+        Ok(())
     }
 
-    fn mark_repo_indexed(&self, repo_name: &str) -> Result<()> {
+    pub(crate) fn mark_repo_indexing_failed(&self, repo_name: &str) -> Result<()> {
+        self.set_indexing_status(repo_name, "failed")?;
+        Ok(())
+    }
+
+    pub(crate) fn mark_repo_indexing_completed(&self, repo_name: &str) -> Result<()> {
         self.set_last_indexed_timestamp(repo_name, chrono::Utc::now().timestamp() as u64)?;
+        self.set_indexing_status(repo_name, "indexed")?;
         Ok(())
     }
 }
