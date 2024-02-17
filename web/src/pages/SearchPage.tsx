@@ -15,6 +15,10 @@ export const SearchPage: React.FC = () => {
     setSelectedFile(item)
   }, [])
 
+  React.useEffect(() => {
+    setSelectedFile(results[0])
+  }, [results])
+
   return (
     <div className="h-screen grid grid-rows-[auto,1fr]">
       <SearchBox onSearch={setQuery} />
