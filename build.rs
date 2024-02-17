@@ -15,5 +15,7 @@ fn main() {
             .args(&["-p", "web/dist"])
             .status()
             .unwrap();
+    } else {
+        panic!("Unknown PROFILE: {}", env::var("PROFILE").unwrap());
     }
 }
