@@ -1,6 +1,6 @@
 use std::path::Path;
-use validator::ValidationError;
 
+use validator::ValidationError;
 
 /// Validate that a path exists
 ///

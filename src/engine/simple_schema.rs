@@ -17,6 +17,7 @@ pub struct SchemaWrapperModel {
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum SchemaWrapperFields {
     RepoName,
     RepoPath,
@@ -77,13 +78,11 @@ impl SimpleSchemaWrapper {
                 SchemaWrapperFields::RepoName,
                 SchemaWrapperFields::RepoPath,
                 SchemaWrapperFields::RepoType,
-
                 SchemaWrapperFields::FileName,
                 SchemaWrapperFields::FilePath,
                 SchemaWrapperFields::FileExt,
                 SchemaWrapperFields::FileSize,
                 SchemaWrapperFields::FileContent,
-
                 SchemaWrapperFields::LastUpdated,
             ];
             for field in fields {
@@ -117,6 +116,7 @@ impl SimpleSchemaWrapper {
         let content_field = self.get_field(SchemaWrapperFields::FileContent);
 
         let updated_field = self.get_field(SchemaWrapperFields::LastUpdated);
+        let tantivy_date = tantivy::DateTime::from_timestamp_millis(data.last_updated.timestamp_millis() as i64);
 
         return doc!(
             repo_name_field => data.repo_name,
@@ -127,11 +127,11 @@ impl SimpleSchemaWrapper {
             ext_field => data.file_ext,
             size_field => data.file_size.to_string(),
             content_field => data.file_content,
-            updated_field => data.last_updated.timestamp_millis(),
+            updated_field => tantivy_date,
         );
     }
 
-    pub fn create_code_file_dto(&self, doc: &tantivy::Document) -> tantivy::Result<SchemaWrapperModel> {
+    pub fn get_model_from_doc(&self, doc: &tantivy::Document) -> tantivy::Result<SchemaWrapperModel> {
         let repo_name = self.extract_text_field(doc, SchemaWrapperFields::RepoName)?;
         let repo_path = self.extract_text_field(doc, SchemaWrapperFields::RepoPath)?;
         let repo_type = self.extract_text_field(doc, SchemaWrapperFields::RepoType)?;
@@ -159,7 +159,12 @@ impl SimpleSchemaWrapper {
     }
 
     fn extract_date_field(&self, doc: &tantivy::Document, field_name: SchemaWrapperFields) -> tantivy::Result<tantivy::DateTime> {
-        Ok(doc.get_first(self.get_field(field_name)).unwrap().as_date().unwrap().clone())
+        let field = self.get_field(field_name);
+        let date_field = doc.get_first(field)
+            .ok_or_else(|| tantivy::TantivyError::SchemaError(format!("Field {:?} not found in document", field_name)))?;
+        let date = date_field.as_date()
+            .ok_or_else(|| tantivy::TantivyError::SchemaError(format!("Field {:?} is not a date field", field_name)))?;
+        Ok(date.clone())
     }
 
     fn extract_text_field(&self, doc: &tantivy::Document, field_name: SchemaWrapperFields) -> tantivy::Result<String> {

@@ -1,6 +1,8 @@
+#![allow(dead_code, unused)]
+
+use std::path::Path;
 
 use anyhow::Result;
-use std::path::Path;
 
 pub(crate) struct EngineMetadataRepo {
     sled_db: sled::Db,
@@ -95,7 +97,8 @@ impl EngineMetadataRepo {
     }
 
     pub(crate) fn mark_repo_indexing_completed(&self, repo_name: &str) -> Result<()> {
-        self.set_last_indexed_timestamp(repo_name, chrono::Utc::now().timestamp() as u64)?;
+        let current_time_utc_sec = chrono::Utc::now().timestamp() as u64;
+        self.set_last_indexed_timestamp(repo_name, current_time_utc_sec)?;
         self.set_indexing_status(repo_name, "indexed")?;
         Ok(())
     }

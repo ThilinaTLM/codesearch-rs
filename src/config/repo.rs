@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
-use crate::utils::validators::{validate_string_in_patterns, validate_path_exists};
+
+use crate::utils::validators::{validate_path_exists, validate_string_in_patterns};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Validate)]
-pub struct Repo {
+pub struct RepoConfig {
     #[validate(length(min = 1))]
     pub(crate) name: String,
 

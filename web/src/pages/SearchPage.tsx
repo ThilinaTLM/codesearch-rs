@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
-import {SearchBox} from "@/components/SearchBox.tsx";
-import {SearchFileContent} from "@/components/SearchFileContent.tsx";
-import {SearchFileList} from "@/components/SearchFileList.tsx";
+import {SearchBox} from "@/components/search/SearchBox.tsx";
+import {SearchFileContent} from "@/components/search/SearchFileContent.tsx";
+import {SearchFileList} from "@/components/search/SearchFileList.tsx";
 import {useSearchResults} from "@/api/hooks.ts";
 import {ResultItem} from "@/models";
 
@@ -16,7 +16,7 @@ export const SearchPage: React.FC = () => {
   }, [])
 
   return (
-    <div className="h-screen grid grid-rows-[auto,1fr,30px]">
+    <div className="h-screen grid grid-rows-[auto,1fr]">
       <SearchBox onSearch={setQuery} />
       <div className="grid grid-cols-3 h-full overflow-hidden pb-3 px-5">
         <div className="col-span-1 overflow-auto p-4 h-full">
@@ -25,11 +25,6 @@ export const SearchPage: React.FC = () => {
         <div className="col-span-2 overflow-auto p-4 h-full">
           <SearchFileContent item={selectedFile} />
         </div>
-      </div>
-      <div className="bg-black flex justify-center items-center">
-        <p className="text-xs font-semibold text-white">
-          Search Code - Powered by Rust + Tantivy
-        </p>
       </div>
     </div>
   );

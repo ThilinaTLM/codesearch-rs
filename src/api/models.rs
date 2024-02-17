@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-use crate::engine::ResultItem;
+use crate::engine::{RepoInfo, ResultItem};
 
 #[derive(Serialize, Deserialize)]
 pub struct StdResponse<T> where T: Serialize {
@@ -43,4 +43,25 @@ pub struct HealthCheckResponse {
 pub struct IndexResponse {
     pub(crate) status: String,
     pub(crate) time_taken: u64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct RepoDto {
+    pub(crate) name: String,
+    pub(crate) last_indexed_time: Option<u64>,
+    pub(crate) number_of_indexed_files: Option<u64>,
+    pub(crate) indexing_status: String,
+    pub(crate) path: String,
+}
+
+impl From<&RepoInfo> for RepoDto {
+    fn from(repo_info: &RepoInfo) -> Self {
+        RepoDto {
+            name: repo_info.name.clone(),
+            last_indexed_time: repo_info.last_indexed_time,
+            number_of_indexed_files: repo_info.number_of_indexed_files,
+            indexing_status: repo_info.indexing_status.clone(),
+            path: repo_info.path.clone(),
+        }
+    }
 }

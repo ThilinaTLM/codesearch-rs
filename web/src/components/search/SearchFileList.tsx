@@ -1,5 +1,5 @@
 import React from 'react';
-import {Card, CardContent, CardDescription, CardTitle} from '@/components/ui/card';
+import {Card, CardContent, CardDescription, CardTitle} from '@/components/ui/card.tsx';
 import {ResultItem} from "@/models";
 
 export type FileListProps = {

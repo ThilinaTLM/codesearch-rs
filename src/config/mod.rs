@@ -3,13 +3,15 @@ use std::fs;
 use serde::{Deserialize, Serialize};
 use serde_yaml;
 use validator::Validate;
-use crate::utils::validators::validate_at_least_one_item;
 
-pub use repo::Repo;
-pub use index::Index;
+pub use index::IndexConfig;
+pub use repo::RepoConfig;
+
+use crate::utils::validators::validate_at_least_one_item;
 
 mod repo;
 mod index;
+mod server;
 
 
 pub(crate) fn load_config(file_path: &str) -> Result<Config, serde_yaml::Error> {
@@ -21,10 +23,14 @@ pub(crate) fn load_config(file_path: &str) -> Result<Config, serde_yaml::Error> 
 
 #[derive(Debug, Serialize, Deserialize, Clone, Validate)]
 pub(crate) struct Config {
+    #[validate]
+    #[serde(default)]
+    pub(crate) server: server::ServerConfig,
+
     #[validate(custom = "validate_at_least_one_item")]
-    pub(crate) repos: Vec<Repo>,
+    pub(crate) repos: Vec<RepoConfig>,
 
     #[validate]
     #[serde(default)]
-    pub(crate) index: Index,
+    pub(crate) index: IndexConfig,
 }
