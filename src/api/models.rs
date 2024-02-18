@@ -26,6 +26,15 @@ pub struct IndexForm {
     pub(crate) force_reindex: bool,
 }
 
+#[derive(Serialize, Deserialize, Validate)]
+pub struct FileContentForm {
+    #[validate(length(min = 1))]
+    pub(crate) path: String,
+
+    #[validate(length(min = 1))]
+    pub(crate) repo_name: String,
+}
+
 
 #[derive(Serialize, Deserialize)]
 pub struct SearchResponse {

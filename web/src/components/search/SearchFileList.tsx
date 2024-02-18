@@ -1,13 +1,35 @@
 import React from 'react';
-import {Card, CardContent, CardDescription, CardTitle} from '@/components/ui/card.tsx';
+import {Card} from '@/components/ui/card.tsx';
 import {ResultItem} from "@/models";
+import {cn} from "@/lib/utils.ts";
+import {ScrollArea} from "@/components/ui/scroll-area.tsx";
 
 export type FileListProps = {
   files: ResultItem[];
   onSelect: (file: ResultItem) => void;
+  height?: number;
 }
 
-export const SearchFileList: React.FC<FileListProps> = ({files, onSelect}) => {
+function fileNameHighlighted(file: ResultItem) {
+  return <>
+    <span className="text-gray-500">{
+      file.file_path.replace(file.file_name, '')
+    }</span>
+    <span className="font-medium">{file.file_name}</span>
+  </>
+}
+
+export const SearchFileList: React.FC<FileListProps> = ({files, onSelect, height}) => {
+
+  const [selected, setSelected] = React.useState<ResultItem | null>(null)
+
+  React.useEffect(() => {
+    setSelected(files[0])
+  }, [files])
+
+  React.useEffect(() => {
+    if (selected) onSelect(selected)
+  }, [selected, onSelect])
 
   if (files.length === 0) {
     return (
@@ -18,16 +40,21 @@ export const SearchFileList: React.FC<FileListProps> = ({files, onSelect}) => {
   }
 
   return (
-    <div className="overflow-auto space-y-2">
+    <ScrollArea style={{height: `${height}px`}} className="p-0">
       {files.map((file) => (
-        <Card key={file.file_path} className="cursor-pointer" onClick={() => onSelect(file)}>
-          <CardContent className="p-3">
-            <CardTitle className="text-sm truncate">{file.file_name}</CardTitle>
-            <CardDescription className="text-xs truncate">Score: {file._score}</CardDescription>
-            <CardDescription className="text-xs truncate">Path: {file.file_path}</CardDescription>
-          </CardContent>
+        <Card
+          key={file.file_path}
+          className={cn("cursor-pointer",
+            selected === file && "border-l-2 border-primary",
+            "hover:bg-gray-100",
+          )}
+          onClick={() => setSelected(file)}
+        >
+          <div className="flex justify-start overflow-hidden text-xs px-2 py-1">
+            <div className="whitespace-nowrap overflow-hidden text-ellipsis begin-truncate">{fileNameHighlighted(file)}</div>
+          </div>
         </Card>
       ))}
-    </div>
+    </ScrollArea>
   );
 };

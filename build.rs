@@ -9,7 +9,7 @@ fn main() {
             .current_dir("./web")
             .status()
             .unwrap();
-    } else if env::var("PROFILE").unwrap() == "release" {
+    } else if env::var("PROFILE").unwrap() == "debug" {
         println!("Running npm run dist for release...");
         Command::new("mkdir")
             .args(&["-p", "web/dist"])

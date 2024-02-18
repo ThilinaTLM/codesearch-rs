@@ -4,6 +4,10 @@ import {SearchFileContent} from "@/components/search/SearchFileContent.tsx";
 import {SearchFileList} from "@/components/search/SearchFileList.tsx";
 import {useSearchResults} from "@/api/hooks.ts";
 import {ResultItem} from "@/models";
+import {
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
 
 
 export const SearchPage: React.FC = () => {
@@ -20,15 +24,28 @@ export const SearchPage: React.FC = () => {
   }, [results])
 
   return (
-    <div className="h-screen grid grid-rows-[auto,1fr]">
+    <div className="h-screen grid grid-rows-[auto,1fr,20px] justify-center">
       <SearchBox onSearch={setQuery} />
-      <div className="grid grid-cols-3 h-full overflow-hidden pb-3 px-5">
-        <div className="col-span-1 overflow-auto p-4 h-full">
-          <SearchFileList files={results} onSelect={handleSelectFile} />
-        </div>
-        <div className="col-span-2 overflow-auto p-4 h-full">
-          <SearchFileContent item={selectedFile} />
-        </div>
+      <div style={{width: window.innerWidth - 100}}>
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="min-h-[200px] rounded-lg border"
+        >
+          <ResizablePanel defaultSize={50}>
+            <SearchFileList
+              files={results}
+              onSelect={handleSelectFile}
+              height={window.innerHeight - 130}
+            />
+          </ResizablePanel>
+
+          <ResizablePanel defaultSize={50}>
+            <SearchFileContent
+              item={selectedFile}
+              height={window.innerHeight - 130}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );

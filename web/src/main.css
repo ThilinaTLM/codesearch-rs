@@ -68,3 +68,14 @@ code {
   font-family: 'Ubuntu Mono', monospace;
 }
 
+/* Add this style in your global CSS file or <style> tag */
+.begin-truncate {
+  direction: rtl; /* Right-to-left text direction */
+  text-overflow: ellipsis; /* Ellipsis for overflowed content */
+}
+
+/* Optional: If you're using RTL for the sole purpose of truncating and your text is actually LTR */
+.begin-truncate::after {
+  content: "";
+  direction: ltr; /* Reset direction for the actual content */
+}

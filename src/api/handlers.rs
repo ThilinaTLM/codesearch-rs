@@ -5,7 +5,8 @@ use include_dir::{Dir, include_dir};
 use warp::reply::{Json, Response};
 use warp::Reply;
 
-use crate::api::models::{HealthCheckResponse, IndexForm, RepoDto, SearchForm, StdResponse};
+use crate::api::models::{FileContentForm, HealthCheckResponse, IndexForm, RepoDto, SearchForm, StdResponse};
+use crate::config;
 use crate::engine::{FileSearchEngine, SearchEngine, SearchOptions};
 
 #[cfg(not(debug_assertions))]
@@ -125,6 +126,23 @@ pub async fn get_repo_list_route_handler(engine: Arc<FileSearchEngine>) -> Resul
 
     let response = StdResponse {
         data: Some(repo_dtos),
+        error: None,
+        time_taken: Some(start_time.elapsed().as_millis() as u64),
+    };
+    Ok::<_, warp::Rejection>(warp::reply::json(&response))
+}
+
+pub async fn get_file_content_route_handler(request: FileContentForm, config: Arc<config::Config>) -> Result<Json, warp::Rejection> {
+    log::info!("Received get file content request");
+    let start_time = std::time::Instant::now();
+
+    let repo = config.repos.iter().find(|r| r.name == request.repo_name).unwrap();
+    let repo_path = &repo.path;
+    let file_path = std::path::Path::new(repo_path).join(&request.path);
+    let file_content = tokio::fs::read_to_string(file_path).await.unwrap();
+
+    let response = StdResponse {
+        data: Some(file_content),
         error: None,
         time_taken: Some(start_time.elapsed().as_millis() as u64),
     };

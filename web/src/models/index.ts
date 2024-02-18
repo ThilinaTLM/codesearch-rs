@@ -16,7 +16,6 @@ export interface ResultItem {
   file_size: number;
   file_last_updated: Date | string;
   file_language: string;
-  file_content: string;
 }
 
 export interface HealthResponse {
@@ -26,4 +25,9 @@ export interface HealthResponse {
 export interface SearchRequest {
   query: string;
   limit?: number;
+}
+
+export interface FileContentRequest {
+  repoName: string;
+  path: string;
 }

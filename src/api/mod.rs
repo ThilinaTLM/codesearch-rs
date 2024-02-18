@@ -51,6 +51,14 @@ pub async fn start_api(config: Arc<Config>, engine: FileSearchEngine) {
         .and_then(handlers::get_repo_list_route_handler)
         .with(cors_filter.clone());
 
+    let config_arc_clone = config.clone();
+    let get_file_content_route = warp::path("file").and(warp::path("content"))
+        .and(warp::get())
+        .and(warp::query::<models::FileContentForm>())
+        .and(warp::any().map(move || config_arc_clone.clone()))
+        .and_then(handlers::get_file_content_route_handler)
+        .with(cors_filter.clone());
+
 
     // Combine all the routes
     let routes = web_ui_route.or(
@@ -59,6 +67,7 @@ pub async fn start_api(config: Arc<Config>, engine: FileSearchEngine) {
                 .or(search_route)
                 .or(create_index_route)
                 .or(get_repo_list_route)
+                .or(get_file_content_route)
         )
     );
 

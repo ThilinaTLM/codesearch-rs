@@ -44,11 +44,11 @@ export class HttpClient {
     return this.request({method: "GET", path, params});
   }
 
-  async post<T, D>(path: string, data: D): Promise<T> {
+  async post<T>(path: string, data: unknown): Promise<T> {
     return this.request({method: "POST", path, data});
   }
 
-  async put<T, D>(path: string, data: D): Promise<T> {
+  async put<T>(path: string, data: unknown): Promise<T> {
     return this.request({method: "PUT", path, data});
   }
 
