@@ -53,8 +53,8 @@ pub async fn start_api(config: Arc<Config>, engine: FileSearchEngine) {
 
     let config_arc_clone = config.clone();
     let get_file_content_route = warp::path("file").and(warp::path("content"))
-        .and(warp::get())
-        .and(warp::query::<models::FileContentForm>())
+        .and(warp::post())
+        .and(warp::body::json())
         .and(warp::any().map(move || config_arc_clone.clone()))
         .and_then(handlers::get_file_content_route_handler)
         .with(cors_filter.clone());

@@ -23,4 +23,3 @@ validator = { version = "0.16.1", features = ["derive"] }
 dirs = "5.0.1"
 anyhow = "1.0.79"
 mime_guess = "2.0.4"
-
