@@ -2,7 +2,6 @@ import React from 'react';
 import {Card} from '@/components/ui/card.tsx';
 import {ResultItem} from "@/models";
 import {cn} from "@/lib/utils.ts";
-import {ScrollArea} from "@/components/ui/scroll-area.tsx";
 
 export type FileListProps = {
   files: ResultItem[];
@@ -40,21 +39,24 @@ export const SearchFileList: React.FC<FileListProps> = ({files, onSelect, height
   }
 
   return (
-    <ScrollArea style={{height: `${height}px`}} className="p-0">
-      {files.map((file) => (
-        <Card
-          key={file.file_path}
-          className={cn("cursor-pointer",
-            selected === file && "border-l-2 border-primary",
-            "hover:bg-gray-100",
-          )}
-          onClick={() => setSelected(file)}
-        >
-          <div className="flex justify-start overflow-hidden text-xs px-2 py-1">
-            <div className="whitespace-nowrap overflow-hidden text-ellipsis begin-truncate">{fileNameHighlighted(file)}</div>
-          </div>
-        </Card>
-      ))}
-    </ScrollArea>
+      <div className="overflow-y-scroll px-3" style={{height: height}}>
+        <div>
+          {files.map((file) => (
+            <Card
+              key={file.file_path}
+              className={cn("cursor-pointer",
+                selected === file && "border-l-2 border-primary",
+                "hover:bg-gray-100",
+              )}
+              onClick={() => setSelected(file)}
+            >
+              <div className="flex justify-start overflow-hidden text-xs px-2 py-1">
+                <div
+                  className="whitespace-nowrap overflow-hidden text-ellipsis begin-truncate">{fileNameHighlighted(file)}</div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
   );
 };

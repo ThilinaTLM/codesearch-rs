@@ -1,7 +1,7 @@
 import React from 'react';
 import {ResultItem} from "@/models";
 import {useFileContent} from "@/api/hooks.ts";
-import {ScrollArea} from "@/components/ui/scroll-area.tsx";
+import CodeBlock from "@/components/CodeBlock.tsx";
 
 
 export type FileContentProps = {
@@ -9,7 +9,7 @@ export type FileContentProps = {
   height?: number;
 }
 
-export const SearchFileContent: React.FC<FileContentProps> = ({item, height}) => {
+export const FileContent: React.FC<FileContentProps> = ({item, height}) => {
 
   const {content, loading} = useFileContent(item?.repo_name || '', item?.file_path || '')
 
@@ -22,12 +22,11 @@ export const SearchFileContent: React.FC<FileContentProps> = ({item, height}) =>
   }
 
   return (
-      <ScrollArea style={{height: `${height}px`}} className="p-3 ">
-      <pre>
-        <code>
-          {content}
-        </code>
-      </pre>
-      </ScrollArea>
+    <div style={{height: `${height}px`}} className="overflow-auto">
+      <CodeBlock
+        extension={item?.file_ext || ''}
+        value={content}
+      />
+    </div>
   );
 };

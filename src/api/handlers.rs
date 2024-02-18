@@ -7,7 +7,7 @@ use warp::Reply;
 
 use crate::api::models::{FileContentForm, HealthCheckResponse, IndexForm, RepoDto, SearchForm, StdResponse};
 use crate::config;
-use crate::engine::{FileSearchEngine, SearchEngine, SearchOptions};
+use crate::engine::{FileSearchEngine, SearchOptions};
 
 #[cfg(not(debug_assertions))]
 static WEB_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/web/dist");
@@ -133,7 +133,7 @@ pub async fn get_repo_list_route_handler(engine: Arc<FileSearchEngine>) -> Resul
 }
 
 pub async fn get_file_content_route_handler(request: FileContentForm, config: Arc<config::Config>) -> Result<Json, warp::Rejection> {
-    log::info!("Received get file content request");
+    log::info!("Received get file content request for: {} {}", request.repo_name, request.path);
     let start_time = std::time::Instant::now();
 
     let repo = config.repos.iter().find(|r| r.name == request.repo_name).unwrap();
