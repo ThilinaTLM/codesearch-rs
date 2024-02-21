@@ -27,8 +27,9 @@ pub async fn start_api(config: Arc<Config>, engine: FileSearchEngine) {
 
     let health_route = warp::path("health")
         .and(warp::get())
-        .map(handlers::health_route_handler);
-
+        .and_then(handlers::health_route_handler)
+        .with(cors_filter.clone());
+    
     let engine_arc_clone = engine_arc.clone();
     let search_route = warp::path("search")
         .and(warp::post())

@@ -11,20 +11,24 @@ export type FileContentProps = {
 
 export const FileContent: React.FC<FileContentProps> = ({item, height}) => {
 
-  const {content, loading} = useFileContent(item?.repo_name || '', item?.file_path || '')
+  const {content, loading} = useFileContent(item?.repoName || '', item?.filePath || '')
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div className="text-xs flex items-center justify-center h-full">
+      <div>Loading....</div>
+    </div>
   }
 
   if (!content) {
-    return <div>No content</div>
+    return <div className="text-xs flex items-center justify-center h-full">
+      <div>No Content</div>
+    </div>
   }
 
   return (
     <div style={{height: `${height}px`}} className="overflow-auto">
       <CodeBlock
-        extension={item?.file_ext || ''}
+        extension={item?.fileExt || ''}
         value={content}
       />
     </div>

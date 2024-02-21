@@ -1,6 +1,5 @@
 import React from "react";
 
-
 const Footer: React.FC = () => {
   return (
     <div className="bg-black flex justify-center items-center">

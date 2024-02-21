@@ -1,21 +1,15 @@
-use serde::{Deserialize, Serialize};
 use tantivy::doc;
 use tantivy::schema::{Field, STORED, STRING, TEXT, TextOptions};
 
-#[derive(Debug, Serialize, Deserialize)]
 pub struct SchemaWrapperModel {
     pub repo_name: String,
     pub repo_path: String,
     pub repo_type: String,
-
     pub file_name: String,
     pub file_path: String,
     pub file_ext: String,
     pub file_size: u64,
-
-    #[serde(skip)]
     pub file_content: String,
-
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
 
@@ -24,13 +18,11 @@ pub enum SchemaWrapperFields {
     RepoName,
     RepoPath,
     RepoType,
-
     FileName,
     FilePath,
     FileExt,
     FileSize,
     FileContent,
-
     LastUpdated,
 }
 

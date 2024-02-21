@@ -5,14 +5,14 @@ use include_dir::{Dir, include_dir};
 use warp::reply::{Json, Response};
 use warp::Reply;
 
-use crate::api::models::{FileContentForm, HealthCheckResponse, IndexForm, RepoDto, SearchForm, StdResponse};
+use crate::api::models::{FileContentForm, HealthCheckResponse, IndexForm, RepoDto, ResultItemDto, SearchForm, StdResponse};
 use crate::config;
-use crate::engine::{FileSearchEngine, SearchOptions};
+use crate::engine::{FileSearchEngine, SearchQueryOptions};
 
 #[cfg(not(debug_assertions))]
 static WEB_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/web/dist");
 
-pub fn health_route_handler() -> warp::reply::Json {
+pub async fn health_route_handler() -> Result<Json, warp::Rejection> {
     log::info!("Received health check request");
     let start_time = std::time::Instant::now();
     let response: StdResponse<HealthCheckResponse> = StdResponse {
@@ -22,7 +22,7 @@ pub fn health_route_handler() -> warp::reply::Json {
         error: None,
         time_taken: Some(start_time.elapsed().as_millis() as u64),
     };
-    warp::reply::json(&response)
+    Ok(warp::reply::json(&response))
 }
 
 pub async fn web_ui_route_handler(tail: warp::path::Tail) -> Result<Response, warp::Rejection> {
@@ -70,7 +70,7 @@ pub async fn search_route_handler(request: SearchForm, engine: Arc<FileSearchEng
     let start_time = std::time::Instant::now();
     let query = request.query;
     let limit = request.limit.unwrap_or(10);
-    let results = engine.search(SearchOptions {
+    let results = engine.search(SearchQueryOptions {
         query,
         limit,
     }).await;
@@ -78,7 +78,8 @@ pub async fn search_route_handler(request: SearchForm, engine: Arc<FileSearchEng
         Ok(results) => {
             log::info!("Search successful, returning results");
             let response = StdResponse {
-                data: Some(results),
+                data: Some(results.iter().map(|item| item.into())
+                    .collect::<Vec<ResultItemDto>>()),
                 error: None,
                 time_taken: Some(start_time.elapsed().as_millis() as u64),
             };

@@ -6,14 +6,12 @@ use anyhow::Result;
 use log;
 use rayon::prelude::*;
 use tantivy::directory::MmapDirectory;
-use tantivy::query::{BooleanQuery, FuzzyTermQuery, Query, TermQuery};
-use tantivy::schema::IndexRecordOption;
+use tantivy::query::{BooleanQuery, FuzzyTermQuery, Query};
 use tantivy::Term;
 use walkdir::{DirEntry, WalkDir};
-use warp::query;
 
 use crate::config::Config;
-use crate::engine::{RepoInfo, ResultItem, SearchOptions, simple_schema};
+use crate::engine::{RepoInfo, SearchResultItem, SearchQueryOptions, simple_schema};
 use crate::engine::metadata::EngineMetadataRepo;
 use crate::engine::simple_schema::SimpleSchemaWrapper;
 
@@ -149,8 +147,6 @@ impl FileSearchEngine {
     fn build_best_query(&self, query: &str) -> Box<dyn Query> {
         let f_file_content = self.schema_wrapper.get_field(simple_schema::SchemaWrapperFields::FileContent);
         let f_file_name = self.schema_wrapper.get_field(simple_schema::SchemaWrapperFields::FileName);
-        let f_file_path = self.schema_wrapper.get_field(simple_schema::SchemaWrapperFields::FilePath);
-        let f_repo_name = self.schema_wrapper.get_field(simple_schema::SchemaWrapperFields::RepoName);
 
         // Split the query into terms and create a fuzzy query for each term for the file_content field
         let terms = query.split_whitespace()
@@ -164,31 +160,18 @@ impl FileSearchEngine {
             })
             .collect::<Vec<Box<dyn Query>>>();
 
-        // Extend this approach to other fields as needed, adjusting for the nature of the data
-        // For simplicity, this example creates term queries for file_name, file_path, and repo_name
-        // let other_field_queries = terms.iter().flat_map(|t| {
-        //     vec![
-        //         Term::from_field_text(f_file_name, t),
-        //         Term::from_field_text(f_file_path, t),
-        //         Term::from_field_text(f_repo_name, t),
-        //     ]
-        // })
-        //     .map(|term| Box::new(TermQuery::new(term, IndexRecordOption::Basic)) as Box<dyn Query>)
-        //     .collect::<Vec<Box<dyn Query>>>();
-
         for term in terms.iter() {
             let term = Term::from_field_text(f_file_name, term);
             file_content_queries.push(Box::new(FuzzyTermQuery::new(term, 1, true)) as Box<dyn Query>);
         }
 
         // Combine all queries using a BooleanQuery
-        // let all_queries = [file_content_queries, other_field_queries].concat();
         let boolean_query = BooleanQuery::union(file_content_queries);
 
         Box::new(boolean_query)
     }
 
-    pub async fn search(&self, options: SearchOptions) -> Result<Vec<ResultItem>> {
+    pub async fn search(&self, options: SearchQueryOptions) -> Result<Vec<SearchResultItem>> {
         log::info!("Executing engine with query: {}", options.query);
         let index = &self.index;
         let index_reader = index.reader()?;
@@ -204,7 +187,7 @@ impl FileSearchEngine {
         for (score, doc_address) in top_docs {
             let retrieved_doc = searcher.doc(doc_address.clone()).unwrap();
             let code_file_dto = self.schema_wrapper.get_model_from_doc(&retrieved_doc).unwrap();
-            results.push(ResultItem {
+            results.push(SearchResultItem {
                 data: code_file_dto,
                 _score: score,
             });

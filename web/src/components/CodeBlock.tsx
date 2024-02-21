@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css';
-import {extToLang} from "@/lib/extToLang.ts"; // Example with GitHub theme
+import {extToLang} from "@/lib/extToLang.ts";
 
 interface CodeBlockProps {
   extension: string;

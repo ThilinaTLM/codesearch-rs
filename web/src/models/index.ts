@@ -2,20 +2,19 @@
 export type StandardResponse<T> = {
   data: T;
   error: string | null;
-  time_taken: number;
+  timeTaken: number;
 }
 
 export interface ResultItem {
   _score: number;
-  repo_name: string;
-  repo_path: string;
-  repo_type: string;
-  file_name: string;
-  file_path: string;
-  file_ext: string;
-  file_size: number;
-  file_last_updated: Date | string;
-  file_language: string;
+  repoName: string;
+  repoPath: string;
+  repoType: string;
+  fileName: string;
+  filePath: string;
+  fileExt: string;
+  fileSize: number;
+  fileLastUpdated: Date | string;
 }
 
 export interface HealthResponse {
@@ -25,6 +24,8 @@ export interface HealthResponse {
 export interface SearchRequest {
   query: string;
   limit?: number;
+  repos?: string[];
+  fileTypes?: string[];
 }
 
 export interface FileContentRequest {

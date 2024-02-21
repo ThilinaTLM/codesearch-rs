@@ -30,7 +30,7 @@ export function useFileContent(repoName: string, path: string) {
       setContent("");
       return;
     }
-    api.fileContent(repoName, path).then((res) => {
+    api.fileContent({repoName, path}).then((res) => {
       setContent(res.data);
       setLoading(false);
     });

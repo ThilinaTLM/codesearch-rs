@@ -12,9 +12,9 @@ export type FileListProps = {
 function fileNameHighlighted(file: ResultItem) {
   return <>
     <span className="text-gray-500">{
-      file.file_path.replace(file.file_name, '')
+      file.filePath.replace(file.fileName, '')
     }</span>
-    <span className="font-medium">{file.file_name}</span>
+    <span className="font-medium">{file.fileName}</span>
   </>
 }
 
@@ -39,11 +39,11 @@ export const SearchFileList: React.FC<FileListProps> = ({files, onSelect, height
   }
 
   return (
-      <div className="overflow-y-scroll px-3" style={{height: height}}>
+      <div className="overflow-y-scroll px-3" style={{height: height || '14%'}}>
         <div>
           {files.map((file) => (
             <Card
-              key={file.file_path}
+              key={file.filePath}
               className={cn("cursor-pointer",
                 selected === file && "border-l-2 border-primary",
                 "hover:bg-gray-100",
